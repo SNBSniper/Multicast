@@ -12,11 +12,12 @@ public class ServerMaster {
     InetAddress localNetworkIp;
 
     int serverPort = 4445;
+    String serverIP = "192.168.31.241";
     List<ServerZone> zoneServers;
     DatagramSocket serverSocket;
 
-    public void start() throws IOException {
-        BufferedReader bufferedReader = null;
+    public void start() throws IOException, InterruptedException {
+       // BufferedReader bufferedReader = null;
 //            bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 //            String location="[Servidor Central]: ";
 //            System.out.println(location + "Agrega Servidor de Zona ");
@@ -39,61 +40,40 @@ public class ServerMaster {
 
         String name = "Zona 1";
         String multicastIP = "224.0.0.3";
-        String petitionIP = "192.168.0.12";
-        String petitionPort = "4445";
+        String petitionIP = "192.168.31.241";
+        String petitionPort = "4448";
 
-
-        this.localNetworkIp = InetAddress.getByName("192.168.0.12");
-
-        System.out.println("Server Starting on IP: "+this.localNetworkIp+":"+this.serverPort);
-        System.out.println("Creating Zone Server: " + name);
         createZoneServer(name,multicastIP, petitionIP);
 
-        System.out.println("Waiting for Connections....");
-        serverSocket = new DatagramSocket(this.serverPort);
-        byte[] outgoingBuffer = new byte[2048];
+        this.initalServerStart();
+
+
         byte[] incomingBuffer = new byte[2048];
 
 
         while(true){ // As of now, Single Threaded, Later Make Multi Thread.
-            //Socket socket = listener.accept(); //Ok here the server stops to listen for incoming comnnections and shit.
+
 
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
 
-            serverSocket.receive(datagramPacket);
+
+            serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
             int clientPort = datagramPacket.getPort();
             InetAddress clientAddress = datagramPacket.getAddress();
 
+            ServerZone serverZone = this.acceptClientConnection(datagramPacket); // CONNECTS AND SEARCHS FOR ZONE SERVER
 
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            outputStream.write(datagramPacket.getData());
-            String data = outputStream.toString().trim();
-
-            System.out.println("Client Connection Accepted");
-            System.out.println("Data: "+ data);
-
-            System.out.println("Requesting Zone: "+ data);
-            ServerZone lookup = null;
-            for (ServerZone i  : this.zoneServers){
-                if(i.getName().equals(data)  )
-                    lookup = i;
-            }
-
-
-            if(lookup == null){
-                String response = "404;Zone : "+data +" not found on the server";
+            if(serverZone == null){
+                String response = "404;Zone not found on the server";
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }else{
-                String response = "200; Zone "+data +" found on Server ;"+lookup.getMulticastAddr()+";"+lookup.getPetitionAddr()+";"+lookup.getPort();
+                String response = "200; Zone found on Server ;"+serverZone.getMulticastAddr().getHostAddress()+";"+serverZone.getPetitionAddr().getHostAddress()+";"+serverZone.getPort();
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }
-
-
-
 
         }
 
@@ -101,11 +81,40 @@ public class ServerMaster {
 
     }
 
+    private ServerZone acceptClientConnection(DatagramPacket datagramPacket) throws IOException {
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(datagramPacket.getData());
+        String data = outputStream.toString().trim();
+
+        System.out.println("Client Connection Accepted");
+        System.out.println("Data: "+ data);
+
+        System.out.println("Requesting Zone: "+ data);
+        ServerZone lookup = null;
+        for (ServerZone i  : this.zoneServers){
+            if(i.getName().equals(data)  )
+                lookup = i;
+        }
+
+        return lookup;
+    }
+
+    private void initalServerStart() throws UnknownHostException, SocketException {
+        this.localNetworkIp = InetAddress.getByName(this.serverIP);
+
+        System.out.println("Starting Master Server");
+        System.out.println("Server Starting on IP: "+this.localNetworkIp+":"+this.serverPort);
+        System.out.println("Waiting for Connections....");
+        this.serverSocket = new DatagramSocket(this.serverPort);
+    }
+
     private void createZoneServer(String name, String multicastIP, String petitionIP) {
         if(this.zoneServers == null)
             this.zoneServers = new ArrayList<ServerZone>();
         try {
             ServerZone zone = new ServerZone(name,multicastIP, petitionIP);
+
             zoneServers.add(zone);
         } catch (SocketException e) {
             e.printStackTrace();

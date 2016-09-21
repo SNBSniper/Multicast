@@ -8,6 +8,7 @@ public class ServerClient {
 
     DatagramSocket clientSocket;
     int port = 4445;
+    int multicastPort = 4446;
 
     public static void main(String args[]){
 
@@ -38,37 +39,34 @@ public class ServerClient {
             zone = "Zona 1";
 
 
-            String answerFromServer = connectToCentralServer(centralServerIP,centralServerPort, zone);
+            String[] answerFromServer = connectToCentralServer(centralServerIP,centralServerPort, zone);
             if(answerFromServer == null){
                 System.out.println("No answer from Server");
                 return;
             }
 
-            String[] split = answerFromServer.split(";");
-            Integer code = Integer.parseInt(split[0]);
-            String msg = split[1];
-            String ipMultiCast=null;
-            String ipPetition=null;
-            String portPetition=null;
+            String code = answerFromServer[0];
 
-            if(code == 404)
-                System.out.println(msg);
-            if(code == 200){
-                System.out.println(msg);
-                ipMultiCast = split[2];
-                ipPetition = split[3];
-                portPetition = split[4];
+            if(code.equals("200")){
+
+                MulticastSocket clientMulticastSocket = this.initalZoneServerConnection(answerFromServer);
+
+                while(true){
+                    byte[] multicastBuffer = new byte[2048];
+                    DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
+                    clientMulticastSocket.receive(msgFromMultiCast);
+                    String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
+                    System.out.println(multicastMessage);
+                }
+                // ACA EMPIEZA JUAN PABLO
 
 
+                //Subscribe to Multicast;
+            }else{
+                //fail Logic
             }
 
             System.out.println("Exiting Gracefully");
-
-
-
-
-
-
 
         }
         catch (UnknownHostException e) {
@@ -82,17 +80,32 @@ public class ServerClient {
         }
     }
 
-    private String connectToCentralServer(String centralServerIP, String centralServerPort, String zone) throws IOException {
+    private MulticastSocket initalZoneServerConnection(String[] answerFromServer){
+
+        String message = answerFromServer[1];
+        String ipMulticast = answerFromServer[2];
+        String petitionAddress = answerFromServer[3];
+        String portPetition = answerFromServer[4];
+
+        System.out.println("Server: "+message);
+        MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast);
+        this.connectToZoneServer(petitionAddress, portPetition);
+        return clientMultiCastSocket;
+    }
+
+
+
+    private String[] connectToCentralServer(String centralServerIP, String centralServerPort, String zone) throws IOException {
 
         Integer port = Integer.parseInt(centralServerPort);
         this.clientSocket = new DatagramSocket();
         InetAddress centralServerAddress = InetAddress.getByName(centralServerIP);
-        byte[] outgoingBuffer = new byte[2048];
+
         byte[] incomingBuffer = new byte[2048];
 
         byte[] sendData = zone.getBytes();
 
-        System.out.println("Connecting to Server....");
+        System.out.println("Connecting to Central Server....");
         System.out.println("Sending : "+ zone);
         //SENDING
         DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, centralServerAddress, port);
@@ -105,27 +118,8 @@ public class ServerClient {
         String recievedString = new String(recievePacket.getData()).trim();
         System.out.println("FROM SERVER: " + recievedString);
         String[] split = recievedString.split(";");
-        String code = split[0];
 
-        if(code.equals("200")){
-            String message = split[1];
-            String ipMulticast = split[2];
-            String petitionAddress = split[3];
-            String portMulticast = split[4];
-
-            this.showConsole();
-            // ACA EMPIEZA JUAN PABLO
-
-
-            //Subscribe to Multicast;
-        }else{
-            //fail Logic
-        }
-
-        System.out.println("Code: "+ split[0]);
-
-
-        return recievedString;
+        return split;
 
     }
 
@@ -137,7 +131,34 @@ public class ServerClient {
         System.out.println("[CLIENTE] (4) Listar Distribumones Capturados");
     }
 
-    private void readInput(){
+    private String readInput() throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String line = br.readLine();
+        return line;
+    }
+
+    private void connectToZoneServer(String ipPetition, String portPetition) {
 
     }
+
+    private MulticastSocket subscribeToMulticast(String ipMultiCast) {
+        try {
+            InetAddress multicastAddress = InetAddress.getByName(ipMultiCast);
+
+            MulticastSocket clientMultiCastSocket = new MulticastSocket(this.multicastPort);
+            clientMultiCastSocket.joinGroup(multicastAddress);
+            return clientMultiCastSocket;
+
+        } catch (UnknownHostException e) {
+            System.out.println("NO HOST FOUND FOR : " + ipMultiCast);
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.out.println("IOException: "+ ipMultiCast);
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+
+
 }
