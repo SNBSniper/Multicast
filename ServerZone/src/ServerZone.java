@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerZone {
+public class ServerZone implements Runnable{
 
 
     String name = null;
@@ -24,6 +24,8 @@ public class ServerZone {
     String serverIPMulticast = "224.0.0.3";
     int port = 4448;
 
+    Thread runner;
+
 
 
     public void initalServerStart() throws IOException {
@@ -36,19 +38,27 @@ public class ServerZone {
 
         this.serverSocket = new DatagramSocket(this.port);
 
-        DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
-        System.out.println("Waiting for Connections....");
-        this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
+        while(true){
+            DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
+            System.out.println("Waiting for Connections....");
+            this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
+            int clientPort = datagramPacket.getPort();
+            InetAddress clientAddress = datagramPacket.getAddress();
+            String hostname = clientAddress.getHostAddress();
+            this.runner = new Thread(this, "Thread Host: "+hostname);
+            System.out.println("Starting thread : "+ this.runner.getName());
+            this.runner.start();
 
-        int clientPort = datagramPacket.getPort();
-        InetAddress clientAddress = datagramPacket.getAddress();
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(datagramPacket.getData());
-        String data = outputStream.toString().trim();
 
-        System.out.println("Client Connection Accepted");
-        System.out.println("Data: "+ data);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(datagramPacket.getData());
+            String data = outputStream.toString().trim();
+
+            System.out.println("Client Connection Accepted");
+            System.out.println("Data: "+ data);
+        }
+
 
 
     }
@@ -66,68 +76,68 @@ public class ServerZone {
         this.petitionAddr = InetAddress.getByName(petitionIP);
 
     }
-
-    public void start() throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-        String location = "[SERVIDOR ZONA "+this.getName()+"]: ";
-
-        System.out.println(location + " Publicar Distribumon ");
-
-        System.out.println(location + " Introducir nombre ");
-        System.out.print("> ");
-        String distribumonName = bufferedReader.readLine();
-
-        System.out.println(location + " Introducir level ");
-        System.out.print("> ");
-        String distribumonLevel = bufferedReader.readLine();
-
-        Distribumon distribumon = new Distribumon(Math.random(), distribumonName, distribumonLevel);
-        DatagramSocket zoneSocket = new DatagramSocket();
-
-        String message = "New Distribumon Created"+" "+distribumon.getName()+distribumon.getLevel();
-
-        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
-        this.serverSocket.send(msgPacket);
-        System.out.println("Pokemon Sent");
 //
-//            System.out.println(location + " Ingresar IP Servidor Central : ");
-
-//            centralServerIP = bufferedReader.readLine();
+//    public void start() throws IOException {
+//        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+//        String location = "[SERVIDOR ZONA "+this.getName()+"]: ";
 //
-//            System.out.println(location + "Introducir Nombre de Zona a explorar :");
-//            System.out.print("> ");
-//            zone = bufferedReader.readLine();
-
-
-
-    }
-
-    public void sendMessage(String message){
-
-
-        // Create a packet that will contain the data
-        // (in the form of bytes) and send it.
-        // ACA EMPIEZA JUAN PABLO
-        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
-        try {
-            serverSocket.send(msgPacket);
-            System.out.println("Server sent packet with msg: " + message);
-            Thread.sleep(500);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
-    public void SendPokemonToBroadCast() throws IOException {
-        String msg = "NEW POKEMON FOUND: PIKACHU?";
-        DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(),msg.getBytes().length, this.multicastAddr, this.port);
-        DatagramSocket zoneSocket = new DatagramSocket();
-        zoneSocket.send(msgPacket);
-    }
+//        System.out.println(location + " Publicar Distribumon ");
+//
+//        System.out.println(location + " Introducir nombre ");
+//        System.out.print("> ");
+//        String distribumonName = bufferedReader.readLine();
+//
+//        System.out.println(location + " Introducir level ");
+//        System.out.print("> ");
+//        String distribumonLevel = bufferedReader.readLine();
+//
+//        Distribumon distribumon = new Distribumon(Math.random(), distribumonName, distribumonLevel);
+//        DatagramSocket zoneSocket = new DatagramSocket();
+//
+//        String message = "New Distribumon Created"+" "+distribumon.getName()+distribumon.getLevel();
+//
+//        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
+//        this.serverSocket.send(msgPacket);
+//        System.out.println("Pokemon Sent");
+////
+////            System.out.println(location + " Ingresar IP Servidor Central : ");
+//
+////            centralServerIP = bufferedReader.readLine();
+////
+////            System.out.println(location + "Introducir Nombre de Zona a explorar :");
+////            System.out.print("> ");
+////            zone = bufferedReader.readLine();
+//
+//
+//
+//    }
+//
+//    public void sendMessage(String message){
+//
+//
+//        // Create a packet that will contain the data
+//        // (in the form of bytes) and send it.
+//        // ACA EMPIEZA JUAN PABLO
+//        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
+//        try {
+//            serverSocket.send(msgPacket);
+//            System.out.println("Server sent packet with msg: " + message);
+//            Thread.sleep(500);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//    }
+//
+//    public void SendPokemonToBroadCast() throws IOException {
+//        String msg = "NEW POKEMON FOUND: PIKACHU?";
+//        DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(),msg.getBytes().length, this.multicastAddr, this.port);
+//        DatagramSocket zoneSocket = new DatagramSocket();
+//        zoneSocket.send(msgPacket);
+//    }
 
     public String getName() {
         return name;
@@ -162,4 +172,8 @@ public class ServerZone {
     }
 
 
+    @Override
+    public void run() {
+        System.out.println("Yea madie it into a thread");
+    }
 }
