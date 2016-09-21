@@ -7,11 +7,12 @@ import java.net.*;
 public class ServerClient {
 
     DatagramSocket clientSocket;
+    DatagramSocket zoneServerPetitionSocket;
     int port = 4445;
     int multicastPort = 4446;
 
     public static void main(String args[]){
-
+        System.setProperty("java.net.preferIPv4Stack", "true");
         ServerClient clientServer = new ServerClient();
         clientServer.start();
     }
@@ -34,7 +35,7 @@ public class ServerClient {
 //            zone = bufferedReader.readLine();
 
             //centralServerIP = "192.168.0.12";
-            centralServerIP = "192.168.31.241";
+            centralServerIP = "192.168.8.101";
             String centralServerPort = "4445";
             zone = "Zona 1";
 
@@ -87,13 +88,15 @@ public class ServerClient {
         String petitionAddress = answerFromServer[3];
         String portPetition = answerFromServer[4];
 
-        System.out.println("Server: "+message);
+        System.out.println("Server: " + message);
         MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast);
-        this.connectToZoneServer(petitionAddress, portPetition);
+        try {
+            this.connectToZoneServer(petitionAddress, portPetition);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return clientMultiCastSocket;
     }
-
-
 
     private String[] connectToCentralServer(String centralServerIP, String centralServerPort, String zone) throws IOException {
 
@@ -137,8 +140,15 @@ public class ServerClient {
         return line;
     }
 
-    private void connectToZoneServer(String ipPetition, String portPetition) {
+    private void connectToZoneServer(String ipPetition, String portPetition) throws IOException {
+        Integer port = Integer.parseInt(portPetition);
+        this.zoneServerPetitionSocket = new DatagramSocket();
+        InetAddress zoneServerPetitionAddress = InetAddress.getByName(ipPetition);
 
+        String data = "Dame un thread po ql";
+        byte[] sendData = data.getBytes();
+        DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
+        this.zoneServerPetitionSocket.send(datagramPacket);
     }
 
     private MulticastSocket subscribeToMulticast(String ipMultiCast) {

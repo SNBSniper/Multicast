@@ -7,7 +7,6 @@ public class Main {
 
     public static void main (String args[]) throws IOException {
 
-
         ServerZone serverZone = new ServerZone();
         serverZone.initalServerStart();
 //        serverZone.waitForConnection();

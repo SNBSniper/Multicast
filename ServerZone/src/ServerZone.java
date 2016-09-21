@@ -6,11 +6,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerZone implements Runnable{
+public class ServerZone implements Runnable {
 
 
     String name = null;
@@ -20,13 +21,11 @@ public class ServerZone implements Runnable{
     DatagramSocket serverSocket;
     MulticastSocket multicastSocket;
 
-    String serverIP = "192.168.31.241";
+    String serverIP = "192.168.8.101";
     String serverIPMulticast = "224.0.0.3";
     int port = 4448;
 
     Thread runner;
-
-
 
     public void initalServerStart() throws IOException {
 
@@ -38,6 +37,36 @@ public class ServerZone implements Runnable{
 
         this.serverSocket = new DatagramSocket(this.port);
 
+        String zoneServerName = this.name;
+        Thread menu = new Thread()  {
+            public void run() {
+                while (true) {
+                    System.out.print("[SERVIDOR ZONA: " + zoneServerName + "] ");
+                    Scanner scan = new Scanner(System.in);
+                    String s = scan.nextLine();
+                    System.out.println(s.trim());
+                    if (s.equals("Publicar distribumon")) {
+                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Introducir nombre");
+                        System.out.print("> ");
+                        String name = scan.next();
+
+                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Introducir nivel");
+                        System.out.print("> ");
+                        String level = scan.next();
+
+                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Se ha publicado al Distribumon: " + name);
+                        System.out.println("******");
+                        System.out.println("id: " + 0);
+                        System.out.println("nombre: " + name);
+                        System.out.println("nivel: " + level);
+
+                        // TODO add distribumon to List of pokemons, and send multicast message
+                    }
+                }
+            }
+        };
+        menu.start();
+
         while(true){
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
             System.out.println("Waiting for Connections....");
@@ -48,7 +77,6 @@ public class ServerZone implements Runnable{
             this.runner = new Thread(this, "Thread Host: "+hostname);
             System.out.println("Starting thread : "+ this.runner.getName());
             this.runner.start();
-
 
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
