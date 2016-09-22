@@ -69,7 +69,7 @@ public class ServerMaster {
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }else{
-                String response = "200; Zone found on Server ;"+serverZone.getMulticastAddr().getHostAddress()+";"+serverZone.getPetitionAddr().getHostAddress()+";"+serverZone.getPort();
+                String response = "200; Zone found on Server ;"+serverZone.getMulticastAddr().getHostAddress()+";"+serverZone.getPetitionAddr().getHostAddress()+";"+serverZone.getPetitionPort();
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);

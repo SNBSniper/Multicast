@@ -11,9 +11,14 @@ public class ServerClient {
     DatagramSocket clientSocket;
     DatagramSocket zoneServerPetitionSocket;
     int port = 4445;
-    int multicastPort = 4446;
+    int multicastPort = 4449;
     String ipPetition;
     int portPetition;
+
+    String centralServerIP;
+    String centralServerPort;
+    String zone;
+
     private ArrayList<String> distribumons;
 
     public static void main(String args[]){
@@ -41,12 +46,12 @@ public class ServerClient {
 //            zone = bufferedReader.readLine();
 
             //centralServerIP = "192.168.0.12";
-            centralServerIP = "10.6.43.79";
-            String centralServerPort = "4445";
-            zone = "Zona 1";
+            this.centralServerIP = "10.6.43.79";
+            this.centralServerPort = "4445";
+            this.zone = "Zona 1";
 
 
-            String[] answerFromServer = connectToCentralServer(centralServerIP, centralServerPort, zone);
+            String[] answerFromServer = connectToCentralServer(this.centralServerIP, this.centralServerPort, this.zone);
             if(answerFromServer == null){
                 System.out.println("No answer from Server");
                 return;
@@ -54,7 +59,7 @@ public class ServerClient {
 
             String code = answerFromServer[0];
 
-            if(code.equals("200")){
+            if(code.equals("200")) {
 
                 Thread menu = new Thread()  {
                     private void showConsole(){
@@ -89,7 +94,7 @@ public class ServerClient {
 
                 menu.start();
 
-                while(true){
+                while(true) {
                     byte[] multicastBuffer = new byte[2048];
                     DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
                     clientMulticastSocket.receive(msgFromMultiCast);
@@ -99,7 +104,6 @@ public class ServerClient {
             }else{
                 //fail Logic
             }
-
             System.out.println("Exiting Gracefully");
 
         }
@@ -130,7 +134,6 @@ public class ServerClient {
     }
 
     private String[] connectToCentralServer(String centralServerIP, String centralServerPort, String zone) throws IOException {
-
         Integer port = Integer.parseInt(centralServerPort);
         this.clientSocket = new DatagramSocket();
         InetAddress centralServerAddress = InetAddress.getByName(centralServerIP);

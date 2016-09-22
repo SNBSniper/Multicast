@@ -22,9 +22,11 @@ public class ServerZone {
     DatagramSocket serverSocket;
     MulticastSocket multicastSocket;
 
-    String serverIP = "10.6.43.79";
-    String serverIPMulticast = "224.0.0.3";
-    int port = 4448;
+    String multicastIP;
+    int multicastPort;
+    String petitionIP;
+    int petitionPort;
+
     LinkedList<String> distribumons;
 
     public void initalServerStart() throws IOException {
@@ -32,12 +34,15 @@ public class ServerZone {
         this.distribumons.add("alpha-centauri:20");
         this.distribumons.add("canis-mayoris:50");
 
-        System.out.println("Server Starting on IP: "+this.serverIP+":"+this.port);
+        System.out.println("Server Starting on IP: "+this.petitionIP+":"+this.petitionPort);
 
-        this.serverSocket = new DatagramSocket();
+        // TODO hacer menu
+        this.multicastIP = "243.0.0.3";
+        this.multicastPort = 4449;
+        this.petitionIP = "10.6.43.1";
+        this.petitionPort =  4448;
 
-
-        this.serverSocket = new DatagramSocket(this.port);
+        this.serverSocket = new DatagramSocket(this.petitionPort);
 
         String zoneServerName = this.name;
         Thread menu = new Thread()  {
@@ -56,13 +61,18 @@ public class ServerZone {
                         System.out.print("> ");
                         String level = scan.next();
 
-                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Se ha publicado al Distribumon: " + name);
+                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Se ha publicado el Distribumon: " + name);
                         System.out.println("******");
                         System.out.println("id: " + 0);
                         System.out.println("nombre: " + name);
                         System.out.println("nivel: " + level);
 
                         ServerZone.this.distribumons.add(name + ":" + level);
+                        try {
+                            sendMessage("HOLAAAAA");
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                        }
                         // TODO and send multicast message
                     }
                 }
@@ -77,7 +87,6 @@ public class ServerZone {
             this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
             int clientPort = datagramPacket.getPort();
             InetAddress clientAddress = datagramPacket.getAddress();
-            String hostname = clientAddress.getHostAddress();
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(datagramPacket.getData());
@@ -149,25 +158,27 @@ public class ServerZone {
 //
 //    }
 //
-//    public void sendMessage(String message){
-//
-//
-//        // Create a packet that will contain the data
-//        // (in the form of bytes) and send it.
-//        // ACA EMPIEZA JUAN PABLO
-//        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
-//        try {
-//            serverSocket.send(msgPacket);
-//            System.out.println("Server sent packet with msg: " + message);
-//            Thread.sleep(500);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//
-//    }
+    public void sendMessage(String message) throws UnknownHostException {
+
+
+        // Create a packet that will contain the data
+        // (in the form of bytes) and send it.
+        // ACA EMPIEZA JUAN PABLO
+        InetAddress multicastAddress = InetAddress.getByName(this.multicastIP);
+
+        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, multicastAddress, this.multicastPort);
+        try {
+            serverSocket.send(msgPacket);
+            System.out.println("Server sent packet with msg: " + message);
+            Thread.sleep(500);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+    }
 //
 //    public void SendPokemonToBroadCast() throws IOException {
 //        String msg = "NEW POKEMON FOUND: PIKACHU?";
@@ -223,14 +234,6 @@ public class ServerZone {
         this.multicastAddr = multicastAddr;
     }
 
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
     public InetAddress getPetitionAddr() {
         return petitionAddr;
     }
@@ -239,4 +242,35 @@ public class ServerZone {
         this.petitionAddr = petitionAddr;
     }
 
+    public String getMulticastIP() {
+        return multicastIP;
+    }
+
+    public void setMulticastIP(String multicastIP) {
+        this.multicastIP = multicastIP;
+    }
+
+    public int getMulticastPort() {
+        return multicastPort;
+    }
+
+    public void setMulticastPort(int multicastPort) {
+        this.multicastPort = multicastPort;
+    }
+
+    public String getPetitionIP() {
+        return petitionIP;
+    }
+
+    public void setPetitionIP(String petitionIP) {
+        this.petitionIP = petitionIP;
+    }
+
+    public int getPetitionPort() {
+        return petitionPort;
+    }
+
+    public void setPetitionPort(int petitionPort) {
+        this.petitionPort = petitionPort;
+    }
 }
