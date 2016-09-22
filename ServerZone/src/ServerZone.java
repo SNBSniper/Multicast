@@ -1,13 +1,7 @@
-import com.sun.corba.se.spi.activation.Server;
-
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.*;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.Scanner;
 
 /**
@@ -34,13 +28,11 @@ public class ServerZone {
         this.distribumons.add("alpha-centauri:20");
         this.distribumons.add("canis-mayoris:50");
 
-        System.out.println("Server Starting on IP: "+this.petitionIP+":"+this.petitionPort);
+        this.createZoneServer();
 
-        // TODO hacer menu
-        this.multicastIP = "243.0.0.3";
-        this.multicastPort = 4449;
-        this.petitionIP = "10.6.43.1";
-        this.petitionPort =  4448;
+        System.out.println("Server Starting on IP: "+this.petitionIP+":"+this.petitionPort);
+        System.out.println("Multicast Starting on IP "+this.multicastIP+":"+this.multicastPort);
+
 
         this.serverSocket = new DatagramSocket(this.petitionPort);
 
@@ -103,10 +95,58 @@ public class ServerZone {
                     System.out.println("Request: " + p);
                     if (p.equals("capture")) ServerZone.this.capture(clientAddress, clientPort);
                     if (p.equals("list")) ServerZone.this.listDistribumons(clientAddress, clientPort);
+                    if (p.equals("view")) ServerZone.this.viewDistribumons(clientAddress, clientPort);
                 }
             });
             t.start();
         }
+    }
+
+    private void viewDistribumons(InetAddress clientAddress, int clientPort) {
+
+
+        String message = "ALL DISTRIBUMONS FOUND HAHAHA";
+        this.sendMessageToMulticast(message);
+
+
+        String response = "view";
+        DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
+        try {
+            ServerZone.this.serverSocket.send(responsePacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Server sent packet with msg: " + message);
+
+    }
+
+    private void sendMessageToMulticast(String message){
+        InetAddress multicastAddress = null;
+        try {
+            multicastAddress = InetAddress.getByName(this.multicastIP);
+            DatagramSocket datagramSocket = new DatagramSocket();
+            DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, multicastAddress, this.multicastPort);
+            datagramSocket.send(msgPacket);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    private void createZoneServer() {
+
+        //TODO MENU AND LOGIC HERE
+        this.setName("Zona 1");
+        this.setPetitionIP("192.168.31.241");
+        this.setPetitionPort(4448);
+
+        this.setMulticastIP("224.0.0.3");
+        this.setMulticastPort(4449);
     }
 
     public ServerZone(){
@@ -167,6 +207,7 @@ public class ServerZone {
         InetAddress multicastAddress = InetAddress.getByName(this.multicastIP);
 
         DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, multicastAddress, this.multicastPort);
+
         try {
             serverSocket.send(msgPacket);
             System.out.println("Server sent packet with msg: " + message);

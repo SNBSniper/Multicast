@@ -46,7 +46,7 @@ public class ServerClient {
 //            zone = bufferedReader.readLine();
 
             //centralServerIP = "192.168.0.12";
-            this.centralServerIP = "10.6.43.79";
+            this.centralServerIP = "192.168.31.241";
             this.centralServerPort = "4445";
             this.zone = "Zona 1";
 
@@ -61,6 +61,8 @@ public class ServerClient {
 
             if(code.equals("200")) {
 
+                System.out.println("Connection Succesfull to Zone Server");
+
                 Thread menu = new Thread()  {
                     private void showConsole(){
                         System.out.println("[CLIENTE] Consola");
@@ -68,6 +70,7 @@ public class ServerClient {
                         System.out.println("[CLIENTE] (2) Cambiar Zona");
                         System.out.println("[CLIENTE] (3) Capturar Distribumon");
                         System.out.println("[CLIENTE] (4) Listar Distribumones Capturados");
+                        System.out.println("[CLIENTE] (5) Ver Distribumones");
                         System.out.print("> ");
                     }
 
@@ -82,6 +85,7 @@ public class ServerClient {
                                 else if (s == 2) System.out.println("Cambiar de zona al ql");
                                 else if (s == 3) ServerClient.this.makePetition("capture");
                                 else if (s == 4) ServerClient.this.viewMyDistribumons();
+                                else if (s == 5) ServerClient.this.makePetition("view");
                                 else             System.out.println("Opcion invalida");
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -97,9 +101,11 @@ public class ServerClient {
                 while(true) {
                     byte[] multicastBuffer = new byte[2048];
                     DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
+                    System.out.println("Waiting for Multicast Message...");
                     clientMulticastSocket.receive(msgFromMultiCast);
                     String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
-                    System.out.println(multicastMessage);
+
+                    System.out.println("MULTICAST MESSAGE: " + multicastMessage);
                 }
             }else{
                 //fail Logic
@@ -122,11 +128,12 @@ public class ServerClient {
 
         String message = answerFromServer[1];
         String ipMulticast = answerFromServer[2];
-        String petitionAddress = answerFromServer[3];
-        String portPetition = answerFromServer[4];
+        String portMulticast = answerFromServer[3];
+        String petitionAddress = answerFromServer[4];
+        String portPetition = answerFromServer[5];
 
-        System.out.println("Server: " + message);
-        MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast);
+        System.out.println("Zone Server: " + message);
+        MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast, portMulticast);
         this.portPetition = Integer.parseInt(portPetition);
         this.ipPetition = petitionAddress;
 
@@ -176,11 +183,12 @@ public class ServerClient {
 //        this.zoneServerPetitionSocket.send(datagramPacket);
     }
 
-    private MulticastSocket subscribeToMulticast(String ipMultiCast) {
+    private MulticastSocket subscribeToMulticast(String ipMultiCast, String portMulticast) {
         try {
             InetAddress multicastAddress = InetAddress.getByName(ipMultiCast);
-
-            MulticastSocket clientMultiCastSocket = new MulticastSocket(this.multicastPort);
+            Integer multicastPort = Integer.parseInt(portMulticast);
+            System.out.println("Binding to Multicast: "+ipMultiCast+":"+portMulticast );
+            MulticastSocket clientMultiCastSocket = new MulticastSocket(multicastPort);
             clientMultiCastSocket.joinGroup(multicastAddress);
             return clientMultiCastSocket;
 
@@ -220,10 +228,14 @@ public class ServerClient {
                 String[] dist = d.split(":");
                 System.out.println(dist[0] + " (Nivel " + dist[1] + ")");
             }
-        }else if (split[0].equals("error")){
-            System.out.println("Error: " + split[1]);
-        }else {
-            System.out.println("Dont know what you doin");
+        } else if (split[0].equals("view")) {
+            System.out.println("Viewing Pkemons");
+        } else {
+            if (split[0].equals("error")) {
+                System.out.println("Error: " + split[1]);
+            } else {
+                System.out.println("Dont know what you doin");
+            }
         }
 
     }
