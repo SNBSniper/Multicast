@@ -12,7 +12,7 @@ public class ServerMaster {
     InetAddress localNetworkIp;
 
     int serverPort = 4445;
-    String serverIP = "192.168.8.101";
+    String serverIP = "10.6.43.79";
     List<ServerZone> zoneServers;
     DatagramSocket serverSocket;
 
@@ -40,7 +40,7 @@ public class ServerMaster {
 
         String name = "Zona 1";
         String multicastIP = "224.0.0.3";
-        String petitionIP = "192.168.8.101";
+        String petitionIP = "10.6.43.79";
         String petitionPort = "4448";
 
         createZoneServer(name,multicastIP, petitionIP);

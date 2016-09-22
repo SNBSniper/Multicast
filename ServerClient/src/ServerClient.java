@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 /**
  * Created by danielftapiar on 9/10/16.
@@ -10,6 +12,9 @@ public class ServerClient {
     DatagramSocket zoneServerPetitionSocket;
     int port = 4445;
     int multicastPort = 4446;
+    String ipPetition;
+    int portPetition;
+    private ArrayList<String> distribumons;
 
     public static void main(String args[]){
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -18,6 +23,7 @@ public class ServerClient {
     }
 
     public void start() {
+        this.distribumons = new ArrayList<String>();
         BufferedReader bufferedReader = null;
 
         try {
@@ -35,12 +41,12 @@ public class ServerClient {
 //            zone = bufferedReader.readLine();
 
             //centralServerIP = "192.168.0.12";
-            centralServerIP = "192.168.8.101";
+            centralServerIP = "10.6.43.79";
             String centralServerPort = "4445";
             zone = "Zona 1";
 
 
-            String[] answerFromServer = connectToCentralServer(centralServerIP,centralServerPort, zone);
+            String[] answerFromServer = connectToCentralServer(centralServerIP, centralServerPort, zone);
             if(answerFromServer == null){
                 System.out.println("No answer from Server");
                 return;
@@ -50,7 +56,38 @@ public class ServerClient {
 
             if(code.equals("200")){
 
+                Thread menu = new Thread()  {
+                    private void showConsole(){
+                        System.out.println("[CLIENTE] Consola");
+                        System.out.println("[CLIENTE] (1) Listar Distribumones en Zona");
+                        System.out.println("[CLIENTE] (2) Cambiar Zona");
+                        System.out.println("[CLIENTE] (3) Capturar Distribumon");
+                        System.out.println("[CLIENTE] (4) Listar Distribumones Capturados");
+                        System.out.print("> ");
+                    }
+
+                    public void run() {
+                        while (true) {
+                            this.showConsole();
+                            Scanner scan = new Scanner(System.in);
+                            Integer s = scan.nextInt();
+
+                            try {
+                                     if (s == 1) ServerClient.this.makePetition("list");
+                                else if (s == 2) System.out.println("Cambiar de zona al ql");
+                                else if (s == 3) ServerClient.this.makePetition("capture");
+                                else if (s == 4) ServerClient.this.viewMyDistribumons();
+                                else             System.out.println("Opcion invalida");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                };
+
                 MulticastSocket clientMulticastSocket = this.initalZoneServerConnection(answerFromServer);
+
+                menu.start();
 
                 while(true){
                     byte[] multicastBuffer = new byte[2048];
@@ -59,10 +96,6 @@ public class ServerClient {
                     String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
                     System.out.println(multicastMessage);
                 }
-                // ACA EMPIEZA JUAN PABLO
-
-
-                //Subscribe to Multicast;
             }else{
                 //fail Logic
             }
@@ -90,11 +123,9 @@ public class ServerClient {
 
         System.out.println("Server: " + message);
         MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast);
-        try {
-            this.connectToZoneServer(petitionAddress, portPetition);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        this.portPetition = Integer.parseInt(portPetition);
+        this.ipPetition = petitionAddress;
+
         return clientMultiCastSocket;
     }
 
@@ -115,7 +146,6 @@ public class ServerClient {
         this.clientSocket.send(datagramPacket);
 
         //RECEIVING
-
         DatagramPacket recievePacket = new DatagramPacket(incomingBuffer, incomingBuffer.length);
         this.clientSocket.receive(recievePacket);
         String recievedString = new String(recievePacket.getData()).trim();
@@ -126,14 +156,6 @@ public class ServerClient {
 
     }
 
-    private void showConsole(){
-        System.out.println("[CLIENTE] Consola");
-        System.out.println("[CLIENTE] (1) Listar Distribumones en Zona");
-        System.out.println("[CLIENTE] (2) Cambiar Zona");
-        System.out.println("[CLIENTE] (3) Capturar Distribumon");
-        System.out.println("[CLIENTE] (4) Listar Distribumones Capturados");
-    }
-
     private String readInput() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String line = br.readLine();
@@ -141,14 +163,14 @@ public class ServerClient {
     }
 
     private void connectToZoneServer(String ipPetition, String portPetition) throws IOException {
-        Integer port = Integer.parseInt(portPetition);
-        this.zoneServerPetitionSocket = new DatagramSocket();
-        InetAddress zoneServerPetitionAddress = InetAddress.getByName(ipPetition);
-
-        String data = "Dame un thread po ql";
-        byte[] sendData = data.getBytes();
-        DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
-        this.zoneServerPetitionSocket.send(datagramPacket);
+//        Integer port = Integer.parseInt(portPetition);
+//        this.zoneServerPetitionSocket = new DatagramSocket();
+//        InetAddress zoneServerPetitionAddress = InetAddress.getByName(ipPetition);
+//
+//        String data = "Dame un thread po ql";
+//        byte[] sendData = data.getBytes();
+//        DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
+//        this.zoneServerPetitionSocket.send(datagramPacket);
     }
 
     private MulticastSocket subscribeToMulticast(String ipMultiCast) {
@@ -170,5 +192,44 @@ public class ServerClient {
 
     }
 
+    private void makePetition(String petition) throws IOException {
+        // Request
+        DatagramSocket zoneServerPetitionSocket = new DatagramSocket();
+        InetAddress zoneServerPetitionAddress = InetAddress.getByName(this.ipPetition);
+        Integer port = this.portPetition;
+        byte[] sendData = petition.getBytes();
+        DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
+        zoneServerPetitionSocket.send(datagramPacket);
 
+        // Response
+        byte[] incomingBuffer = new byte[2048];
+        DatagramPacket recievePacket = new DatagramPacket(incomingBuffer, incomingBuffer.length);
+        zoneServerPetitionSocket.receive(recievePacket);
+        String response = new String(recievePacket.getData()).trim();
+        String[] split = response.split(";");
+        if (split[0].equals("capture")) {
+            String[] d = split[1].split(":");
+            System.out.println("Has capturado un " + d[0] + " nivel " + d[1]);
+            this.distribumons.add(split[1]);
+        }else if (split[0].equals("list")){
+            String[] distribumons = response.substring(5).split(";");
+            for(String d: distribumons){
+                String[] dist = d.split(":");
+                System.out.println(dist[0] + " (Nivel " + dist[1] + ")");
+            }
+        }else if (split[0].equals("error")){
+            System.out.println("Error: " + split[1]);
+        }else {
+            System.out.println("Dont know what you doin");
+        }
+
+    }
+
+    private void viewMyDistribumons(){
+        for(Object d : this.distribumons) {
+            String element = (String) d;
+            String split[] = element.split(":");
+            System.out.println(split[0] + " (Nivel " + split[1] + ")");
+        }
+    }
 }

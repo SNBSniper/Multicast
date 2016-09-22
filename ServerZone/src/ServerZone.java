@@ -5,14 +5,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerZone implements Runnable {
-
+public class ServerZone {
 
     String name = null;
     InetAddress multicastAddr = null;
@@ -21,19 +22,20 @@ public class ServerZone implements Runnable {
     DatagramSocket serverSocket;
     MulticastSocket multicastSocket;
 
-    String serverIP = "192.168.8.101";
+    String serverIP = "10.6.43.79";
     String serverIPMulticast = "224.0.0.3";
     int port = 4448;
-
-    Thread runner;
+    LinkedList<String> distribumons;
 
     public void initalServerStart() throws IOException {
+        this.distribumons = new LinkedList<String>();
+        this.distribumons.add("alpha-centauri:20");
+        this.distribumons.add("canis-mayoris:50");
 
         System.out.println("Server Starting on IP: "+this.serverIP+":"+this.port);
 
         this.serverSocket = new DatagramSocket();
 
-        byte[] incomingBuffer = new byte[2048];
 
         this.serverSocket = new DatagramSocket(this.port);
 
@@ -60,7 +62,8 @@ public class ServerZone implements Runnable {
                         System.out.println("nombre: " + name);
                         System.out.println("nivel: " + level);
 
-                        // TODO add distribumon to List of pokemons, and send multicast message
+                        ServerZone.this.distribumons.add(name + ":" + level);
+                        // TODO and send multicast message
                     }
                 }
             }
@@ -68,16 +71,13 @@ public class ServerZone implements Runnable {
         menu.start();
 
         while(true){
+            byte[] incomingBuffer = new byte[2048];
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
             System.out.println("Waiting for Connections....");
             this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
             int clientPort = datagramPacket.getPort();
             InetAddress clientAddress = datagramPacket.getAddress();
             String hostname = clientAddress.getHostAddress();
-            this.runner = new Thread(this, "Thread Host: "+hostname);
-            System.out.println("Starting thread : "+ this.runner.getName());
-            this.runner.start();
-
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(datagramPacket.getData());
@@ -85,10 +85,19 @@ public class ServerZone implements Runnable {
 
             System.out.println("Client Connection Accepted");
             System.out.println("Data: "+ data);
+
+            System.out.println("Starting thread");
+            final String parameter = data;
+            Thread t = new Thread(new Runnable() {
+                String p = parameter;
+                public void run() {
+                    System.out.println("Request: " + p);
+                    if (p.equals("capture")) ServerZone.this.capture(clientAddress, clientPort);
+                    if (p.equals("list")) ServerZone.this.listDistribumons(clientAddress, clientPort);
+                }
+            });
+            t.start();
         }
-
-
-
     }
 
     public ServerZone(){
@@ -167,6 +176,37 @@ public class ServerZone implements Runnable {
 //        zoneSocket.send(msgPacket);
 //    }
 
+    private void capture(InetAddress clientAddress, Integer clientPort) {
+        String response;
+        if (this.distribumons.isEmpty()) {
+            response = "error;no quedan distribumones";
+        }else {
+            // TODO add random chance of capture
+            response = "capture;" + this.distribumons.remove();
+            // response = "miss;aweonao";
+        }
+        DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
+        try {
+            ServerZone.this.serverSocket.send(responsePacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void listDistribumons(InetAddress clientAddress, Integer clientPort) {
+        String response = "list";
+        for (Object d: this.distribumons){
+            response += ";" + (String)d;
+        }
+        System.out.println(response);
+        DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
+        try {
+            ServerZone.this.serverSocket.send(responsePacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public String getName() {
         return name;
     }
@@ -199,9 +239,4 @@ public class ServerZone implements Runnable {
         this.petitionAddr = petitionAddr;
     }
 
-
-    @Override
-    public void run() {
-        System.out.println("Yea madie it into a thread");
-    }
 }
