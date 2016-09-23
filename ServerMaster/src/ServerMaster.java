@@ -3,6 +3,7 @@ import java.net.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by danielftapiar on 9/10/16.
@@ -12,57 +13,59 @@ public class ServerMaster {
     InetAddress localNetworkIp;
 
     int serverPort = 4445;
-    String serverIP = "192.168.31.241";
+    String serverIP = "192.168.8.101";
     List<ZoneServerOBJ> zoneServers;
     DatagramSocket serverSocket;
 
     public void start() throws IOException, InterruptedException {
-       // BufferedReader bufferedReader = null;
-//            bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-//            String location="[Servidor Central]: ";
-//            System.out.println(location + "Agrega Servidor de Zona ");
-//
-//            System.out.println(location +"Nombre : ");
-//            System.out.print("> ");
-//            String name = bufferedReader.readLine();
-//
-//            System.out.println(location +"IP Multicast :");
-//            System.out.print("> ");
-//            String multicastIP = bufferedReader.readLine();
-//
-//            System.out.println(location +": IP Peticiones :");
-//            System.out.print("> ");
-//            String petitionIP = bufferedReader.readLine();
-//
-//            System.out.println(location +": Puerto Peticiones :");
-//            System.out.print("> ");
-//            String petitionPort = bufferedReader.readLine();
+        this.zoneServers = new ArrayList<ZoneServerOBJ>();
 
-        String name = "Zona 1";
-        String multicastIP = "224.0.0.3";
-        String multicastPort = "4449";
-        String petitionIP = "192.168.31.241";
-        String petitionPort = "4448";
+        Thread menu = new Thread()  {
+            public void run() {
+                while (true) {
+                    System.out.println("[Servidor Central] (1) Agregar servidor de zona");
+                    System.out.print("> ");
+                    Scanner scan = new Scanner(System.in);
+                    int s = scan.nextInt(); scan.nextLine();
+                    if (s == 1) {
+                        System.out.println("[Servidor Central] Nombre");
+                        System.out.print("> ");
+                        String name = scan.nextLine();
 
-        this.createZoneServer(name,multicastIP, petitionIP, Integer.parseInt(multicastPort), Integer.parseInt(petitionPort));
+                        System.out.println("[SERVIDOR ZONA] IP Multicast");
+                        System.out.print("> ");
+                        String multicastIP = scan.nextLine();
+
+                        System.out.println("[SERVIDOR ZONA] Puerto Multicast");
+                        System.out.print("> ");
+                        String multicastPort = scan.nextLine();
+
+                        System.out.println("[SERVIDOR ZONA] IP Peticiones");
+                        System.out.print("> ");
+                        String petitionIP = scan.nextLine();
+
+                        System.out.println("[SERVIDOR ZONA] Puerto Peticiones");
+                        System.out.print("> ");
+                        String petitionPort = scan.nextLine();
+
+                        ServerMaster.this.createZoneServer(name,multicastIP, petitionIP, Integer.parseInt(multicastPort), Integer.parseInt(petitionPort));
+                    }
+                }
+            }
+        };
+        menu.start();
 
         this.initalServerStart();
 
-
         byte[] incomingBuffer = new byte[2048];
-
-
         while(true){ // As of now, Single Threaded, Later Make Multi Thread.
-
-
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
-
 
             serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
             int clientPort = datagramPacket.getPort();
             InetAddress clientAddress = datagramPacket.getAddress();
 
-            ZoneServerOBJ serverZone = this.acceptClientConnection(datagramPacket); // CONNECTS AND SEARCHS FOR ZONE SERVER
+            ZoneServerOBJ serverZone = this.acceptClientConnection(datagramPacket, clientAddress); // CONNECTS AND SEARCHS FOR ZONE SERVER
 
             if(serverZone == null){
                 String response = "404;Zone not found on the server";
@@ -70,7 +73,7 @@ public class ServerMaster {
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }else{
-                String response = "200; Zone found on Server ;"+serverZone.getMulticastIP()+";"+serverZone.getMulticastPort()+";"+serverZone.getPetitionIP()+";"+serverZone.getPetitionPort();
+                String response = "200;Zone found on Server;"+serverZone.getMulticastIP()+";"+serverZone.getMulticastPort()+";"+serverZone.getPetitionIP()+";"+serverZone.getPetitionPort();
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
@@ -82,16 +85,14 @@ public class ServerMaster {
 
     }
 
-    private ZoneServerOBJ acceptClientConnection(DatagramPacket datagramPacket) throws IOException {
+    private ZoneServerOBJ acceptClientConnection(DatagramPacket datagramPacket, InetAddress clientAddress) throws IOException {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         outputStream.write(datagramPacket.getData());
         String data = outputStream.toString().trim();
 
-        System.out.println("Client Connection Accepted");
-        System.out.println("Data: "+ data);
+        System.out.println("[Servidor Central]:  Respuesta a " + clientAddress + " por " + data);
 
-        System.out.println("Requesting Zone: "+ data);
         ZoneServerOBJ lookup = null;
         for (ZoneServerOBJ i  : this.zoneServers){
             if(i.getName().equals(data)  )
@@ -111,9 +112,6 @@ public class ServerMaster {
     }
 
     private void createZoneServer(String name, String multicastIP, String petitionIP, Integer multicastPort, Integer petitionPort) {
-        if(this.zoneServers == null)
-            this.zoneServers = new ArrayList<ZoneServerOBJ>();
-
         ZoneServerOBJ zone = new ZoneServerOBJ();
 
         zone.setName(name);
@@ -124,6 +122,6 @@ public class ServerMaster {
 
         zoneServers.add(zone);
 
-        System.out.println("Zone Server Created Succesfully");
+        System.out.println("[Servidor Central]: Servidor de zona " + name + " creado exitosamente");
     }
 }

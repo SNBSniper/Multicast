@@ -8,16 +8,16 @@ import java.util.Scanner;
  */
 public class ServerClient {
 
-    DatagramSocket clientSocket;
-    DatagramSocket zoneServerPetitionSocket;
-    int port = 4445;
-    int multicastPort = 4449;
-    String ipPetition;
-    int portPetition;
+    private DatagramSocket clientSocket;
+    private String ipPetition;
+    private int portPetition;
 
-    String centralServerIP;
-    String centralServerPort;
-    String zone;
+    private String centralServerIP;
+    private String centralServerPort;
+    private Boolean hasZone = false;
+    private MulticastSocket zoneServerMulticastSocket;
+    private String zoneServerMulticastIP;
+    private Thread multicastThread;
 
     private ArrayList<String> distribumons;
 
@@ -29,98 +29,108 @@ public class ServerClient {
 
     public void start() {
         this.distribumons = new ArrayList<String>();
-        BufferedReader bufferedReader = null;
+        Scanner scan = new Scanner(System.in);
 
+        System.out.println("[Cliente] Ingresar IP Servidor Central");
+        System.out.print("> ");
+        this.centralServerIP = scan.nextLine().trim();
+
+        System.out.println("[Cliente] Ingresar Puerto Servidor Central");
+        System.out.print("> ");
+        this.centralServerPort = scan.nextLine().trim();
         try {
-            String centralServerIP;
-            String zone;
-//            bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-//            String location = "[CLIENTE]: ";
-//
-//            System.out.println(location + " Ingresar IP Servidor Central : ");
-//            System.out.print("> ");
-//            centralServerIP = bufferedReader.readLine();
-//
-//            System.out.println(location + "Introducir Nombre de Zona a explorar :");
-//            System.out.print("> ");
-//            zone = bufferedReader.readLine();
+            this.changeZone();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-            //centralServerIP = "192.168.0.12";
-            this.centralServerIP = "192.168.31.241";
-            this.centralServerPort = "4445";
-            this.zone = "Zona 1";
+        while(true) {
+            this.showConsole();
+            Integer s = scan.nextInt();
 
-
-            String[] answerFromServer = connectToCentralServer(this.centralServerIP, this.centralServerPort, this.zone);
-            if(answerFromServer == null){
-                System.out.println("No answer from Server");
-                return;
+            try {
+                if (ServerClient.this.hasZone) {
+                    if (s == 1) ServerClient.this.makePetition("list");
+                    else if (s == 2) ServerClient.this.changeZone();
+                    else if (s == 3) ServerClient.this.makePetition("capture");
+                    else if (s == 4) ServerClient.this.viewMyDistribumons();
+                    else if (s == 5) ServerClient.this.makePetition("view");
+                    else System.out.println("Opcion invalida");
+                } else {
+                    if (s == 1) ServerClient.this.changeZone();
+                    else System.out.println("Opcion invalida");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+        }
 
-            String code = answerFromServer[0];
+    }
 
-            if(code.equals("200")) {
+    private void showConsole() {
+        if (!ServerClient.this.hasZone) {
+            System.out.println("[Cliente] (1) Cambiar Zona\n> ");
+            return;
+        }
+        System.out.println("[Cliente] (1) Listar Distribumones en Zona");
+        System.out.println("[Cliente] (2) Cambiar Zona");
+        System.out.println("[Cliente] (3) Capturar Distribumon");
+        System.out.println("[Cliente] (4) Listar Distribumones Capturados");
+        System.out.println("[Cliente] (5) Ver Distribumones");
+        System.out.print("> ");
+    }
 
-                System.out.println("Connection Succesfull to Zone Server");
+    private void changeZone() throws IOException {
+        System.out.println("[Cliente] Introducir Nombre de Zona a explorar, Ej: Casa Central, San Joaquin");
+        System.out.print("> ");
+        Scanner scan = new Scanner(System.in);
+        String zone = scan.nextLine().trim();
 
-                Thread menu = new Thread()  {
-                    private void showConsole(){
-                        System.out.println("[CLIENTE] Consola");
-                        System.out.println("[CLIENTE] (1) Listar Distribumones en Zona");
-                        System.out.println("[CLIENTE] (2) Cambiar Zona");
-                        System.out.println("[CLIENTE] (3) Capturar Distribumon");
-                        System.out.println("[CLIENTE] (4) Listar Distribumones Capturados");
-                        System.out.println("[CLIENTE] (5) Ver Distribumones");
-                        System.out.print("> ");
-                    }
+        // Leave previous group
+        if (this.multicastThread != null && this.multicastThread.isAlive())
+            this.multicastThread.interrupt();
+        if (this.zoneServerMulticastSocket != null && this.zoneServerMulticastSocket.isBound())
+            this.zoneServerMulticastSocket.leaveGroup(InetAddress.getByName(this.zoneServerMulticastIP));
+        this.hasZone = false;
 
-                    public void run() {
-                        while (true) {
-                            this.showConsole();
-                            Scanner scan = new Scanner(System.in);
-                            Integer s = scan.nextInt();
+        String[] answerFromServer = connectToCentralServer(this.centralServerIP, this.centralServerPort, zone);
+        if(answerFromServer == null){
+            System.out.println("No answer from Server");
+            return;
+        }
+        String code = answerFromServer[0];
 
-                            try {
-                                     if (s == 1) ServerClient.this.makePetition("list");
-                                else if (s == 2) System.out.println("Cambiar de zona al ql");
-                                else if (s == 3) ServerClient.this.makePetition("capture");
-                                else if (s == 4) ServerClient.this.viewMyDistribumons();
-                                else if (s == 5) ServerClient.this.makePetition("view");
-                                else             System.out.println("Opcion invalida");
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+        if(code.equals("200")) {
+            this.hasZone = true;
+            System.out.println("Connection Succesfull to Zone Server");
+            this.zoneServerMulticastSocket = this.initalZoneServerConnection(answerFromServer);
+            this.multicastThread = new Thread() {
+                public void run() {
+                    try {
+                        while(true) {
+                            byte[] multicastBuffer = new byte[2048];
+                            DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
+                            System.out.println("Waiting for Multicast Message...");
+                            ServerClient.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
+                            String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
+
+                            System.out.println("MULTICAST MESSAGE: " + multicastMessage);
                         }
                     }
-                };
-
-                MulticastSocket clientMulticastSocket = this.initalZoneServerConnection(answerFromServer);
-
-                menu.start();
-
-                while(true) {
-                    byte[] multicastBuffer = new byte[2048];
-                    DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
-                    System.out.println("Waiting for Multicast Message...");
-                    clientMulticastSocket.receive(msgFromMultiCast);
-                    String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
-
-                    System.out.println("MULTICAST MESSAGE: " + multicastMessage);
+                    catch (UnknownHostException e) {
+                        System.out.println("Hostname/IP could not be found in the network");
+                        e.printStackTrace();
+                    }catch (IOException e) {
+                        System.out.println("Couldn't open socket for I/O Operation");
+                        e.printStackTrace();
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }else{
-                //fail Logic
-            }
-            System.out.println("Exiting Gracefully");
-
-        }
-        catch (UnknownHostException e) {
-            System.out.println("Hostname/IP could not be found in the network");
-            e.printStackTrace();
-        }catch (IOException e) {
-            System.out.println("Couldn't open socket for I/O Operation");
-            e.printStackTrace();
-        }catch (Exception e) {
-            e.printStackTrace();
+            };
+            this.multicastThread.start();
+        }else {
+            // Fail logic
         }
     }
 
@@ -132,6 +142,7 @@ public class ServerClient {
         String petitionAddress = answerFromServer[4];
         String portPetition = answerFromServer[5];
 
+        this.zoneServerMulticastIP = ipMulticast;
         System.out.println("Zone Server: " + message);
         MulticastSocket clientMultiCastSocket = this.subscribeToMulticast(ipMulticast, portMulticast);
         this.portPetition = Integer.parseInt(portPetition);
@@ -172,17 +183,6 @@ public class ServerClient {
         return line;
     }
 
-    private void connectToZoneServer(String ipPetition, String portPetition) throws IOException {
-//        Integer port = Integer.parseInt(portPetition);
-//        this.zoneServerPetitionSocket = new DatagramSocket();
-//        InetAddress zoneServerPetitionAddress = InetAddress.getByName(ipPetition);
-//
-//        String data = "Dame un thread po ql";
-//        byte[] sendData = data.getBytes();
-//        DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
-//        this.zoneServerPetitionSocket.send(datagramPacket);
-    }
-
     private MulticastSocket subscribeToMulticast(String ipMultiCast, String portMulticast) {
         try {
             InetAddress multicastAddress = InetAddress.getByName(ipMultiCast);
@@ -211,6 +211,7 @@ public class ServerClient {
         byte[] sendData = petition.getBytes();
         DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, zoneServerPetitionAddress, port);
         zoneServerPetitionSocket.send(datagramPacket);
+        System.out.println("Petition sent: " + this.ipPetition + ":" +port);
 
         // Response
         byte[] incomingBuffer = new byte[2048];

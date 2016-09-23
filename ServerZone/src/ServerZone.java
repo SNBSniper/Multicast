@@ -40,20 +40,19 @@ public class ServerZone {
         Thread menu = new Thread()  {
             public void run() {
                 while (true) {
-                    System.out.print("[SERVIDOR ZONA: " + zoneServerName + "] ");
+                    System.out.print("[Servidor Zona: " + zoneServerName + "] (1) Publicar distribumon\n> ");
                     Scanner scan = new Scanner(System.in);
-                    String s = scan.nextLine();
-                    System.out.println(s.trim());
-                    if (s.equals("Publicar distribumon")) {
-                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Introducir nombre");
+                    int s = scan.nextInt(); scan.nextLine();
+                    if (s == 1) {
+                        System.out.println("[Servidor Zona: " + zoneServerName + "] Introducir nombre");
                         System.out.print("> ");
-                        String name = scan.next();
+                        String name = scan.nextLine().trim();
 
-                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Introducir nivel");
+                        System.out.println("[Servidor Zona: " + zoneServerName + "] Introducir nivel");
                         System.out.print("> ");
                         String level = scan.next();
 
-                        System.out.println("[SERVIDOR ZONA: " + zoneServerName + "] Se ha publicado el Distribumon: " + name);
+                        System.out.println("[Servidor Zona: " + zoneServerName + "] Se ha publicado el Distribumon: " + name);
                         System.out.println("******");
                         System.out.println("id: " + 0);
                         System.out.println("nombre: " + name);
@@ -61,11 +60,11 @@ public class ServerZone {
 
                         ServerZone.this.distribumons.add(name + ":" + level);
                         try {
+                            // TODO and send multicast message letting clients know with message: Aparece nuevo Distribumon!: name
                             sendMessage("HOLAAAAA");
                         } catch (UnknownHostException e) {
                             e.printStackTrace();
                         }
-                        // TODO and send multicast message
                     }
                 }
             }
@@ -142,7 +141,7 @@ public class ServerZone {
 
         //TODO MENU AND LOGIC HERE
         this.setName("Zona 1");
-        this.setPetitionIP("192.168.31.241");
+        this.setPetitionIP("192.168.8.101");
         this.setPetitionPort(4448);
 
         this.setMulticastIP("224.0.0.3");
