@@ -1,3 +1,5 @@
+package cl.utfsm;
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
@@ -15,6 +17,16 @@ public class Master {
     final static String serverIP = "127.0.0.1";
     List<ZoneServerOBJ> zoneServers;
     DatagramSocket serverSocket;
+
+    public static void main(String[] args) throws InterruptedException {
+        Master masterServer = new Master();
+
+        try {
+            masterServer.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void start() throws IOException, InterruptedException {
         this.zoneServers = new ArrayList<ZoneServerOBJ>();
