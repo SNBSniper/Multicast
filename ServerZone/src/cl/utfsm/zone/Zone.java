@@ -47,7 +47,7 @@ public class Zone {
 
         this.serverSocket = new DatagramSocket(this.petitionPort);
 
-        String zoneServerName = this.name;
+        final String zoneServerName = this.name;
         Thread menu = new Thread()  {
             public void run() {
                 while (true) {
@@ -86,8 +86,8 @@ public class Zone {
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
             System.out.println("Waiting for Connections....");
             this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
-            int clientPort = datagramPacket.getPort();
-            InetAddress clientAddress = datagramPacket.getAddress();
+            final int clientPort = datagramPacket.getPort();
+            final InetAddress clientAddress = datagramPacket.getAddress();
 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(datagramPacket.getData());
