@@ -11,8 +11,8 @@ public class Master {
 
     InetAddress localNetworkIp;
 
-    int serverPort = 4445;
-    String serverIP = "192.168.8.101";
+    final static int serverPort = 4445;
+    final static String serverIP = "127.0.0.1";
     List<ZoneServerOBJ> zoneServers;
     DatagramSocket serverSocket;
 
@@ -58,6 +58,7 @@ public class Master {
 
         byte[] incomingBuffer = new byte[2048];
         while(true){ // As of now, Single Threaded, Later Make Multi Thread.
+            java.util.Arrays.fill(incomingBuffer, (byte) 0);
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
 
             serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
@@ -67,11 +68,18 @@ public class Master {
             ZoneServerOBJ serverZone = this.acceptClientConnection(datagramPacket, clientAddress); // CONNECTS AND SEARCHS FOR ZONE SERVER
 
             if(serverZone == null){
+                System.out.println("[Servidor central] Servidor de zona no encontrado");
                 String response = "404;Zone not found on the server";
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }else{
+                System.out.println("[Servidor central] Nombre: " + serverZone.getName() +
+                                   ", IP Multicast: "            + serverZone.getMulticastIP() +
+                                   ", Puerto Multicast: "        + serverZone.getMulticastPort() +
+                                   ", IP Peticiones: "           + serverZone.getPetitionIP() +
+                                   ", Puerto Peticiones: "       + serverZone.getPetitionPort());
+
                 String response = "200;Zone found on Server;"+serverZone.getMulticastIP()+";"+serverZone.getMulticastPort()+";"+serverZone.getPetitionIP()+";"+serverZone.getPetitionPort();
                 System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
@@ -90,7 +98,7 @@ public class Master {
         outputStream.write(datagramPacket.getData());
         String data = outputStream.toString().trim();
 
-        System.out.println("[Servidor Central]:  Respuesta a " + clientAddress + " por " + data);
+        System.out.println("[Servidor Central] Respuesta a " + clientAddress + " por " + data);
 
         ZoneServerOBJ lookup = null;
         for (ZoneServerOBJ i  : this.zoneServers){

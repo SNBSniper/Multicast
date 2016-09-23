@@ -24,6 +24,7 @@ public class Zone {
     LinkedList<String> distribumons;
 
     public void initalServerStart() throws IOException {
+        System.setProperty("java.net.preferIPv4Stack", "true");
         this.distribumons = new LinkedList<String>();
         this.distribumons.add("alpha-centauri:20");
         this.distribumons.add("canis-mayoris:50");
@@ -93,29 +94,10 @@ public class Zone {
                     System.out.println("Request: " + p);
                     if (p.equals("capture")) Zone.this.capture(clientAddress, clientPort);
                     if (p.equals("list")) Zone.this.listDistribumons(clientAddress, clientPort);
-                    if (p.equals("view")) Zone.this.viewDistribumons(clientAddress, clientPort);
                 }
             });
             t.start();
         }
-    }
-
-    private void viewDistribumons(InetAddress clientAddress, int clientPort) {
-
-
-        String message = "ALL DISTRIBUMONS FOUND HAHAHA";
-        this.sendMessageToMulticast(message);
-
-
-        String response = "view";
-        DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
-        try {
-            Zone.this.serverSocket.send(responsePacket);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Server sent packet with msg: " + message);
-
     }
 
     private void sendMessageToMulticast(String message){
@@ -132,19 +114,30 @@ public class Zone {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private void createZoneServer() {
+        Scanner scan = new Scanner(System.in);
 
-        //TODO MENU AND LOGIC HERE
-        this.setName("Zona 1");
-        this.setPetitionIP("192.168.8.101");
-        this.setPetitionPort(4448);
+        System.out.print("[Server Zone] Nombre Servidor\n> ");
+        String name = scan.nextLine().trim();
+        this.setName(name);
 
-        this.setMulticastIP("224.0.0.3");
-        this.setMulticastPort(4449);
+        System.out.print("[Server Zone] IP Multicast\n> ");
+        String multicastIP = scan.nextLine().trim();
+        this.setMulticastIP(multicastIP);
+
+        System.out.print("[Server Zone] Puerto Multicast\n> ");
+        int multicastPort = scan.nextInt(); scan.nextLine();
+        this.setMulticastPort(multicastPort);
+
+        System.out.print("[Server Zone] IP Peticiones\n> ");
+        String petitionIP = scan.nextLine().trim();
+        this.setPetitionIP(petitionIP);
+
+        System.out.print("[Server Zone] Puerto Peticiones\n> ");
+        int petitionPort = scan.nextInt(); scan.nextLine();
+        this.setPetitionPort(petitionPort);
     }
 
     public Zone(){
@@ -160,45 +153,8 @@ public class Zone {
         this.petitionAddr = InetAddress.getByName(petitionIP);
 
     }
-//
-//    public void start() throws IOException {
-//        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-//        String location = "[SERVIDOR ZONA "+this.getName()+"]: ";
-//
-//        System.out.println(location + " Publicar Distribumon ");
-//
-//        System.out.println(location + " Introducir nombre ");
-//        System.out.print("> ");
-//        String distribumonName = bufferedReader.readLine();
-//
-//        System.out.println(location + " Introducir level ");
-//        System.out.print("> ");
-//        String distribumonLevel = bufferedReader.readLine();
-//
-//        Distribumon distribumon = new Distribumon(Math.random(), distribumonName, distribumonLevel);
-//        DatagramSocket zoneSocket = new DatagramSocket();
-//
-//        String message = "New Distribumon Created"+" "+distribumon.getName()+distribumon.getLevel();
-//
-//        DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, this.multicastAddr, this.port);
-//        this.serverSocket.send(msgPacket);
-//        System.out.println("Pokemon Sent");
-////
-////            System.out.println(location + " Ingresar IP Servidor Central : ");
-//
-////            centralServerIP = bufferedReader.readLine();
-////
-////            System.out.println(location + "Introducir Nombre de Zona a explorar :");
-////            System.out.print("> ");
-////            zone = bufferedReader.readLine();
-//
-//
-//
-//    }
-//
+
     public void sendMessage(String message) throws UnknownHostException {
-
-
         // Create a packet that will contain the data
         // (in the form of bytes) and send it.
         // ACA EMPIEZA JUAN PABLO
@@ -218,13 +174,6 @@ public class Zone {
 
 
     }
-//
-//    public void SendPokemonToBroadCast() throws IOException {
-//        String msg = "NEW POKEMON FOUND: PIKACHU?";
-//        DatagramPacket msgPacket = new DatagramPacket(msg.getBytes(),msg.getBytes().length, this.multicastAddr, this.port);
-//        DatagramSocket zoneSocket = new DatagramSocket();
-//        zoneSocket.send(msgPacket);
-//    }
 
     private void capture(InetAddress clientAddress, Integer clientPort) {
         String response;
@@ -233,7 +182,6 @@ public class Zone {
         }else {
             // TODO add random chance of capture
             response = "capture;" + this.distribumons.remove();
-            // response = "miss;aweonao";
         }
         DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
         try {

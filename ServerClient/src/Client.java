@@ -54,7 +54,6 @@ public class Client {
                     else if (s == 2) Client.this.changeZone();
                     else if (s == 3) Client.this.makePetition("capture");
                     else if (s == 4) Client.this.viewMyDistribumons();
-                    else if (s == 5) Client.this.makePetition("view");
                     else System.out.println("Opcion invalida");
                 } else {
                     if (s == 1) Client.this.changeZone();
@@ -89,8 +88,10 @@ public class Client {
         // Leave previous group
         if (this.multicastThread != null && this.multicastThread.isAlive())
             this.multicastThread.interrupt();
-        if (this.zoneServerMulticastSocket != null && this.zoneServerMulticastSocket.isBound())
+        if (this.zoneServerMulticastSocket != null && ! this.zoneServerMulticastSocket.isClosed()){
             this.zoneServerMulticastSocket.leaveGroup(InetAddress.getByName(this.zoneServerMulticastIP));
+            this.zoneServerMulticastSocket.close();
+        }
         this.hasZone = false;
 
         String[] answerFromServer = connectToCentralServer(this.centralServerIP, this.centralServerPort, zone);
@@ -110,9 +111,14 @@ public class Client {
                         while(true) {
                             byte[] multicastBuffer = new byte[2048];
                             DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
-                            Client.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
+                            try {
+                                Client.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
+                            }catch(SocketException e) {
+                                e.getMessage();
+                                return;
+                            }
                             String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
-                            System.out.println("[Cliente] Aparece nuevo Distribumon!:" + multicastMessage);
+                            System.out.println("[Cliente] Aparece nuevo Distribumon!: " + multicastMessage);
                         }
                     }
                     catch (UnknownHostException e) {
@@ -121,7 +127,7 @@ public class Client {
                     }catch (IOException e) {
                         System.out.println("Couldn't open socket for I/O Operation");
                         e.printStackTrace();
-                    }catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
