@@ -1,4 +1,4 @@
-package cl.utfsm;
+package cl.utfsm.master;
 /**
  * Created by danielftapiar on 9/22/16.
  */

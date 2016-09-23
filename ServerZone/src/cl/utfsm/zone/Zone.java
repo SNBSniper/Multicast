@@ -1,7 +1,10 @@
+package cl.utfsm.zone;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.LinkedList;
+
 import java.util.Scanner;
 
 /**
@@ -22,6 +25,13 @@ public class Zone {
     int petitionPort;
 
     LinkedList<String> distribumons;
+
+    public static void main (String args[]) throws IOException {
+
+        Zone zone = new Zone();
+        zone.initalServerStart();
+
+    }
 
     public void initalServerStart() throws IOException {
         System.setProperty("java.net.preferIPv4Stack", "true");

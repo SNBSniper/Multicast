@@ -1,4 +1,4 @@
-package cl.utfsm;
+package cl.utfsm.master;
 
 import java.io.*;
 import java.net.*;
