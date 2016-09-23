@@ -110,11 +110,9 @@ public class ServerClient {
                         while(true) {
                             byte[] multicastBuffer = new byte[2048];
                             DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
-                            System.out.println("Waiting for Multicast Message...");
                             ServerClient.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
                             String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
-
-                            System.out.println("MULTICAST MESSAGE: " + multicastMessage);
+                            System.out.println("[Cliente] Aparece nuevo Distribumon!:" + multicastMessage);
                         }
                     }
                     catch (UnknownHostException e) {

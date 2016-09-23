@@ -60,8 +60,7 @@ public class ServerZone {
 
                         ServerZone.this.distribumons.add(name + ":" + level);
                         try {
-                            // TODO and send multicast message letting clients know with message: Aparece nuevo Distribumon!: name
-                            sendMessage("HOLAAAAA");
+                            sendMessage(name);
                         } catch (UnknownHostException e) {
                             e.printStackTrace();
                         }
