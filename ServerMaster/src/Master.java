@@ -1,14 +1,13 @@
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerMaster {
+public class Master {
 
     InetAddress localNetworkIp;
 
@@ -48,7 +47,7 @@ public class ServerMaster {
                         System.out.print("> ");
                         String petitionPort = scan.nextLine();
 
-                        ServerMaster.this.createZoneServer(name,multicastIP, petitionIP, Integer.parseInt(multicastPort), Integer.parseInt(petitionPort));
+                        Master.this.createZoneServer(name,multicastIP, petitionIP, Integer.parseInt(multicastPort), Integer.parseInt(petitionPort));
                     }
                 }
             }

@@ -6,7 +6,7 @@ import java.util.Scanner;
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerClient {
+public class Client {
 
     private DatagramSocket clientSocket;
     private String ipPetition;
@@ -23,7 +23,7 @@ public class ServerClient {
 
     public static void main(String args[]){
         System.setProperty("java.net.preferIPv4Stack", "true");
-        ServerClient clientServer = new ServerClient();
+        Client clientServer = new Client();
         clientServer.start();
     }
 
@@ -49,15 +49,15 @@ public class ServerClient {
             Integer s = scan.nextInt();
 
             try {
-                if (ServerClient.this.hasZone) {
-                    if (s == 1) ServerClient.this.makePetition("list");
-                    else if (s == 2) ServerClient.this.changeZone();
-                    else if (s == 3) ServerClient.this.makePetition("capture");
-                    else if (s == 4) ServerClient.this.viewMyDistribumons();
-                    else if (s == 5) ServerClient.this.makePetition("view");
+                if (Client.this.hasZone) {
+                    if (s == 1) Client.this.makePetition("list");
+                    else if (s == 2) Client.this.changeZone();
+                    else if (s == 3) Client.this.makePetition("capture");
+                    else if (s == 4) Client.this.viewMyDistribumons();
+                    else if (s == 5) Client.this.makePetition("view");
                     else System.out.println("Opcion invalida");
                 } else {
-                    if (s == 1) ServerClient.this.changeZone();
+                    if (s == 1) Client.this.changeZone();
                     else System.out.println("Opcion invalida");
                 }
             } catch (IOException e) {
@@ -68,7 +68,7 @@ public class ServerClient {
     }
 
     private void showConsole() {
-        if (!ServerClient.this.hasZone) {
+        if (!Client.this.hasZone) {
             System.out.println("[Cliente] (1) Cambiar Zona\n> ");
             return;
         }
@@ -110,7 +110,7 @@ public class ServerClient {
                         while(true) {
                             byte[] multicastBuffer = new byte[2048];
                             DatagramPacket msgFromMultiCast = new DatagramPacket(multicastBuffer, multicastBuffer.length);
-                            ServerClient.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
+                            Client.this.zoneServerMulticastSocket.receive(msgFromMultiCast);
                             String multicastMessage = new String(multicastBuffer, 0, multicastBuffer.length).trim();
                             System.out.println("[Cliente] Aparece nuevo Distribumon!:" + multicastMessage);
                         }

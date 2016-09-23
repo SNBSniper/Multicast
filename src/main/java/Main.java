@@ -3,7 +3,7 @@ import java.io.IOException;
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
-        ServerMaster masterServer = new ServerMaster();
+        Master masterServer = new Master();
 
         try {
             masterServer.start();

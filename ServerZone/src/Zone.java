@@ -7,7 +7,7 @@ import java.util.Scanner;
 /**
  * Created by danielftapiar on 9/10/16.
  */
-public class ServerZone {
+public class Zone {
 
     String name = null;
     InetAddress multicastAddr = null;
@@ -58,7 +58,7 @@ public class ServerZone {
                         System.out.println("nombre: " + name);
                         System.out.println("nivel: " + level);
 
-                        ServerZone.this.distribumons.add(name + ":" + level);
+                        Zone.this.distribumons.add(name + ":" + level);
                         try {
                             sendMessage(name);
                         } catch (UnknownHostException e) {
@@ -91,9 +91,9 @@ public class ServerZone {
                 String p = parameter;
                 public void run() {
                     System.out.println("Request: " + p);
-                    if (p.equals("capture")) ServerZone.this.capture(clientAddress, clientPort);
-                    if (p.equals("list")) ServerZone.this.listDistribumons(clientAddress, clientPort);
-                    if (p.equals("view")) ServerZone.this.viewDistribumons(clientAddress, clientPort);
+                    if (p.equals("capture")) Zone.this.capture(clientAddress, clientPort);
+                    if (p.equals("list")) Zone.this.listDistribumons(clientAddress, clientPort);
+                    if (p.equals("view")) Zone.this.viewDistribumons(clientAddress, clientPort);
                 }
             });
             t.start();
@@ -110,7 +110,7 @@ public class ServerZone {
         String response = "view";
         DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
         try {
-            ServerZone.this.serverSocket.send(responsePacket);
+            Zone.this.serverSocket.send(responsePacket);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -147,12 +147,12 @@ public class ServerZone {
         this.setMulticastPort(4449);
     }
 
-    public ServerZone(){
+    public Zone(){
         super();
     }
 
 
-    public ServerZone(String name, String multiCastIP, String petitionIP) throws SocketException, UnknownHostException {
+    public Zone(String name, String multiCastIP, String petitionIP) throws SocketException, UnknownHostException {
 
         this.serverSocket = new DatagramSocket();
         this.name = name;
@@ -237,7 +237,7 @@ public class ServerZone {
         }
         DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
         try {
-            ServerZone.this.serverSocket.send(responsePacket);
+            Zone.this.serverSocket.send(responsePacket);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -251,7 +251,7 @@ public class ServerZone {
         System.out.println(response);
         DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
         try {
-            ServerZone.this.serverSocket.send(responsePacket);
+            Zone.this.serverSocket.send(responsePacket);
         } catch (IOException e) {
             e.printStackTrace();
         }
