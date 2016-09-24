@@ -43,19 +43,19 @@ public class Master {
                         System.out.print("> ");
                         String name = scan.nextLine();
 
-                        System.out.println("[SERVIDOR ZONA] IP Multicast");
+                        System.out.println("[Servidor Central] IP Multicast");
                         System.out.print("> ");
                         String multicastIP = scan.nextLine();
 
-                        System.out.println("[SERVIDOR ZONA] Puerto Multicast");
+                        System.out.println("[Servidor Central] Puerto Multicast");
                         System.out.print("> ");
                         String multicastPort = scan.nextLine();
 
-                        System.out.println("[SERVIDOR ZONA] IP Peticiones");
+                        System.out.println("[Servidor Central] IP Peticiones");
                         System.out.print("> ");
                         String petitionIP = scan.nextLine();
 
-                        System.out.println("[SERVIDOR ZONA] Puerto Peticiones");
+                        System.out.println("[Servidor Central] Puerto Peticiones");
                         System.out.print("> ");
                         String petitionPort = scan.nextLine();
 
@@ -64,9 +64,9 @@ public class Master {
                 }
             }
         };
-        menu.start();
 
         this.initalServerStart();
+        menu.start();
 
         byte[] incomingBuffer = new byte[2048];
         while(true){ // As of now, Single Threaded, Later Make Multi Thread.
@@ -82,7 +82,6 @@ public class Master {
             if(serverZone == null){
                 System.out.println("[Servidor central] Servidor de zona no encontrado");
                 String response = "404;Zone not found on the server";
-                System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }else{
@@ -93,7 +92,6 @@ public class Master {
                                    ", Puerto Peticiones: "       + serverZone.getPetitionPort());
 
                 String response = "200;Zone found on Server;"+serverZone.getMulticastIP()+";"+serverZone.getMulticastPort()+";"+serverZone.getPetitionIP()+";"+serverZone.getPetitionPort();
-                System.out.println(response);
                 DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
                 this.serverSocket.send(responsePacket);
             }
@@ -124,9 +122,9 @@ public class Master {
     private void initalServerStart() throws UnknownHostException, SocketException {
         this.localNetworkIp = InetAddress.getByName(this.serverIP);
 
-        System.out.println("Starting Master Server");
-        System.out.println("Server Starting on IP: "+this.serverIP+":"+this.serverPort);
-        System.out.println("Waiting for Connections....");
+        System.out.println("[Servidor Central] Starting Master Server");
+        System.out.println("[Servidor Central] Server Starting on IP: "+this.serverIP+":"+this.serverPort);
+        System.out.println("[Servidor Central] Waiting for Connections....");
         this.serverSocket = new DatagramSocket(this.serverPort);
     }
 
@@ -141,6 +139,6 @@ public class Master {
 
         zoneServers.add(zone);
 
-        System.out.println("[Servidor Central]: Servidor de zona " + name + " creado exitosamente");
+        System.out.println("[Servidor Central] Servidor de zona " + name + " creado exitosamente");
     }
 }

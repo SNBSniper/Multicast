@@ -77,7 +77,6 @@ public class Client {
         System.out.println("[Cliente] (2) Cambiar Zona");
         System.out.println("[Cliente] (3) Capturar Distribumon");
         System.out.println("[Cliente] (4) Listar Distribumones Capturados");
-        System.out.println("[Cliente] (5) Ver Distribumones");
         System.out.print("> ");
     }
 
@@ -98,14 +97,14 @@ public class Client {
 
         String[] answerFromServer = connectToCentralServer(this.centralServerIP, this.centralServerPort, zone);
         if(answerFromServer == null){
-            System.out.println("No answer from Server");
+            System.out.println("[Cliente] No answer from Server");
             return;
         }
         String code = answerFromServer[0];
 
         if(code.equals("200")) {
             this.hasZone = true;
-            System.out.println("Connection Succesfull to Zone Server");
+            System.out.println("[Cliente] Connection Succesfull to Zone Server");
             this.zoneServerMulticastSocket = this.initalZoneServerConnection(answerFromServer);
             this.multicastThread = new Thread() {
                 public void run() {
@@ -124,10 +123,10 @@ public class Client {
                         }
                     }
                     catch (UnknownHostException e) {
-                        System.out.println("Hostname/IP could not be found in the network");
+                        System.out.println("[Cliente] Hostname/IP could not be found in the network");
                         e.printStackTrace();
                     }catch (IOException e) {
-                        System.out.println("Couldn't open socket for I/O Operation");
+                        System.out.println("[Cliente] Couldn't open socket for I/O Operation");
                         e.printStackTrace();
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -135,8 +134,6 @@ public class Client {
                 }
             };
             this.multicastThread.start();
-        }else {
-            // Fail logic
         }
     }
 
@@ -166,8 +163,6 @@ public class Client {
 
         byte[] sendData = zone.getBytes();
 
-        System.out.println("Connecting to Central Server....");
-        System.out.println("Sending : "+ zone);
         //SENDING
         DatagramPacket datagramPacket = new DatagramPacket(sendData, sendData.length, centralServerAddress, port);
         this.clientSocket.send(datagramPacket);
@@ -176,11 +171,9 @@ public class Client {
         DatagramPacket recievePacket = new DatagramPacket(incomingBuffer, incomingBuffer.length);
         this.clientSocket.receive(recievePacket);
         String recievedString = new String(recievePacket.getData()).trim();
-        System.out.println("FROM SERVER: " + recievedString);
         String[] split = recievedString.split(";");
 
         return split;
-
     }
 
     private String readInput() throws IOException {
@@ -193,7 +186,6 @@ public class Client {
         try {
             InetAddress multicastAddress = InetAddress.getByName(ipMultiCast);
             Integer multicastPort = Integer.parseInt(portMulticast);
-            System.out.println("Binding to Multicast: "+ipMultiCast+":"+portMulticast );
             MulticastSocket clientMultiCastSocket = new MulticastSocket(multicastPort);
             clientMultiCastSocket.joinGroup(multicastAddress);
             return clientMultiCastSocket;
@@ -235,8 +227,6 @@ public class Client {
                 String[] dist = d.split(":");
                 System.out.println(dist[0] + " (Nivel " + dist[1] + ")");
             }
-        } else if (split[0].equals("view")) {
-            System.out.println("Viewing Pkemons");
         } else {
             if (split[0].equals("error")) {
                 System.out.println("Error: " + split[1]);

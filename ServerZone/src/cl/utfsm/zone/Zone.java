@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.*;
 import java.util.LinkedList;
-
 import java.util.Scanner;
 
 /**
@@ -38,12 +37,14 @@ public class Zone {
         this.distribumons = new LinkedList<String>();
         this.distribumons.add("alpha-centauri:20");
         this.distribumons.add("canis-mayoris:50");
+        this.distribumons.add("geminis:60");
+        this.distribumons.add("multipacketon:600");
+        this.distribumons.add("utpmon:300");
 
         this.createZoneServer();
 
-        System.out.println("Server Starting on IP: "+this.petitionIP+":"+this.petitionPort);
-        System.out.println("Multicast Starting on IP "+this.multicastIP+":"+this.multicastPort);
-
+        System.out.println("[Servidor Zona] Server Starting on IP: "+this.petitionIP+":"+this.petitionPort);
+        System.out.println("[Servidor Zona] Multicast Starting on IP "+this.multicastIP+":"+this.multicastPort);
 
         this.serverSocket = new DatagramSocket(this.petitionPort);
 
@@ -84,7 +85,6 @@ public class Zone {
         while(true){
             byte[] incomingBuffer = new byte[2048];
             DatagramPacket datagramPacket = new DatagramPacket(incomingBuffer,incomingBuffer.length);
-            System.out.println("Waiting for Connections....");
             this.serverSocket.receive(datagramPacket); //HERE IT STOPS AND WAITS FOR CLIENT
             int clientPort = datagramPacket.getPort();
             InetAddress clientAddress = datagramPacket.getAddress();
@@ -93,15 +93,10 @@ public class Zone {
             outputStream.write(datagramPacket.getData());
             String data = outputStream.toString().trim();
 
-            System.out.println("Client Connection Accepted");
-            System.out.println("Data: "+ data);
-
-            System.out.println("Starting thread");
             final String parameter = data;
             Thread t = new Thread(new Runnable() {
                 String p = parameter;
                 public void run() {
-                    System.out.println("Request: " + p);
                     if (p.equals("capture")) Zone.this.capture(clientAddress, clientPort);
                     if (p.equals("list")) Zone.this.listDistribumons(clientAddress, clientPort);
                 }
@@ -165,24 +160,18 @@ public class Zone {
     }
 
     public void sendMessage(String message) throws UnknownHostException {
-        // Create a packet that will contain the data
-        // (in the form of bytes) and send it.
-        // ACA EMPIEZA JUAN PABLO
         InetAddress multicastAddress = InetAddress.getByName(this.multicastIP);
 
         DatagramPacket msgPacket = new DatagramPacket(message.getBytes(), message.getBytes().length, multicastAddress, this.multicastPort);
 
         try {
             serverSocket.send(msgPacket);
-            System.out.println("Server sent packet with msg: " + message);
             Thread.sleep(500);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
     }
 
     private void capture(InetAddress clientAddress, Integer clientPort) {
@@ -206,7 +195,6 @@ public class Zone {
         for (Object d: this.distribumons){
             response += ";" + (String)d;
         }
-        System.out.println(response);
         DatagramPacket responsePacket = new DatagramPacket(response.getBytes(), response.getBytes().length, clientAddress, clientPort);
         try {
             Zone.this.serverSocket.send(responsePacket);
